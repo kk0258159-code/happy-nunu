@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日健康與習慣追蹤</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto+Sans+TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+    <div class="max-w-md mx-auto px-4 pt-6">
+        <!-- 標題與日期導航 -->
+        <header class="bg-white rounded-2xl shadow-sm p-4 mb-5 border border-slate-100">
+            <div class="flex justify-between items-center mb-3">
+                <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>✨</span> 每日健康追蹤
+                </h1>
+                <span id="streakBadge" class="text-xs bg-emerald-50 text-emerald-600 font-semibold px-2.5 py-1 rounded-full border border-emerald-100">
+                    連續打卡 0 天
+                </span>
+            </div>
+            
+            <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <button onclick="changeDate(-1)" class="p-2 hover:bg-white rounded-lg text-slate-600 font-bold transition shadow-sm">◀</button>
+                <div class="text-center">
+                    <input type="date" id="datePicker" onchange="onDateChange(this.value)" class="bg-transparent font-bold text-slate-800 text-center focus:outline-none cursor-pointer">
+                    <div id="dateDisplay" class="text-xs text-slate-400">載入中...</div>
+                </div>
+                <button onclick="changeDate(1)" class="p-2 hover:bg-white rounded-lg text-slate-600 font-bold transition shadow-sm">▶</button>
+            </div>
+            <div class="mt-2 text-center">
+                <button onclick="setToday()" class="text-xs text-blue-600 hover:underline font-medium">回到今天</button>
+            </div>
+        </header>
+
+        <!-- 1. 每天紀錄體重 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-slate-100">
+            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center justify-between">
+                <span>1. 體重紀錄</span>
+                <span id="weightDiff" class="text-xs font-normal text-slate-400">與前次比較：--</span>
+            </h2>
+            <div class="flex items-center gap-3">
+                <div class="relative flex-1">
+                    <input type="number" step="0.1" id="weightInput" placeholder="請輸入體重" oninput="saveWeight(this.value)"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">kg</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 每天喝水 500cc x 4 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-slate-100">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider">2. 每日喝水 500cc × 4</h2>
+                <span id="waterText" class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">0 / 2000 cc</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2.5" id="waterCups"></div>
+        </section>
+
+        <!-- 3. 用藥、茶包、運動與作息打卡 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-slate-100 space-y-3">
+            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">3. 日常習慣與用藥</h2>
+            
+            <!-- 飯前/後中藥 -->
+            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">🌿</span>
+                    <span class="font-medium text-slate-700">飯前/後中藥</span>
+                </div>
+                <input type="checkbox" id="medBefore" onchange="saveHabit('medBefore', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
+            </label>
+
+            <!-- 壽美降脂1號 -->
+            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">💊</span>
+                    <span class="font-medium text-slate-700">壽美降脂1號</span>
+                </div>
+                <input type="checkbox" id="medAfter" onchange="saveHabit('medAfter', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
+            </label>
+
+            <!-- 茶包 -->
+            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">🍵</span>
+                    <span class="font-medium text-slate-700">茶包</span>
+                </div>
+                <input type="checkbox" id="teaBag" onchange="saveHabit('teaBag', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
+            </label>
+
+            <!-- 每日運動 -->
+            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">🏃</span>
+                    <span class="font-medium text-slate-700">每日運動</span>
+                </div>
+                <input type="checkbox" id="dailyExercise" onchange="saveHabit('dailyExercise', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
+            </label>
+
+            <!-- 12點前睡覺 -->
+            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">🌙</span>
+                    <span class="font-medium text-slate-700">12點前睡覺</span>
+                </div>
+                <input type="checkbox" id="sleepBefore12" onchange="saveHabit('sleepBefore12', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
+            </label>
+        </section>
+
+        <!-- 4. 歷史體重紀錄清單 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-slate-100">
+            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center justify-between">
+                <span>📉 歷史體重紀錄</span>
+                <span class="text-xs font-normal text-slate-400">所有紀錄</span>
+            </h2>
+            <div id="weightHistoryList" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+        </section>
+
+        <!-- 資料備份與還原工具 -->
+        <footer class="bg-white rounded-2xl shadow-sm p-4 border border-slate-100 text-center space-y-2">
+            <div class="text-xs text-slate-400 font-medium">資料安全與備份</div>
+            <div class="flex gap-2 justify-center">
+                <button onclick="exportData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg font-medium transition">
+                    📥 備份資料檔案
+                </button>
+                <label class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg font-medium transition cursor-pointer">
+                    📤 還原備份
+                    <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="hidden">
+                </label>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const STORAGE_PREFIX = 'my_health_tracker_';
+        let currentDate = getLocalDateString(new Date());
+
+        function getLocalDateString(dateObj) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getDefaultData() {
+            return {
+                weight: '',
+                waterCount: 0,
+                medBefore: false,
+                medAfter: false,
+                teaBag: false,
+                dailyExercise: false,
+                sleepBefore12: false
+            };
+        }
+
+        function getAllData() {
+            let dataObj = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.startsWith(STORAGE_PREFIX)) {
+                    dataObj[key] = localStorage.getItem(key);
+                }
+            }
+            if (Object.keys(dataObj).length === 0 && window.location.hash.length > 1) {
+                try {
+                    let jsonStr = decodeURIComponent(window.location.hash.substring(1));
+                    dataObj = JSON.parse(jsonStr);
+                    for (let k in dataObj) {
+                        if (k.startsWith(STORAGE_PREFIX)) {
+                            localStorage.setItem(k, dataObj[k]);
+                        }
+                    }
+                } catch(e) {}
+            }
+            return dataObj;
+        }
+
+        function syncToURL() {
+            let dataObj = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.startsWith(STORAGE_PREFIX)) {
+                    dataObj[key] = localStorage.getItem(key);
+                }
+            }
+            let jsonStr = JSON.stringify(dataObj);
+            window.location.hash = encodeURIComponent(jsonStr);
+        }
+
+        function initApp() {
+            getAllData();
+            document.getElementById('datePicker').value = currentDate;
+            renderWaterCups();
+            loadDayData(currentDate);
+            updateStreak();
+            renderWeightHistory();
+        }
+
+        function renderWaterCups() {
+            const container = document.getElementById('waterCups');
+            container.innerHTML = '';
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.createElement('button');
+                btn.id = `water_${i}`;
+                btn.onclick = () => toggleWater(i);
+                btn.className = `flex flex-col items-center justify-center py-3 rounded-xl border border-slate-200 bg-slate-50 transition font-medium text-xs text-slate-500`;
+                btn.innerHTML = `<span class="text-xl mb-1">🥤</span><span>+500c</span>`;
+                container.appendChild(btn);
+            }
+        }
+
+        function getStorageKey(date) {
+            return `${STORAGE_PREFIX}${date}`;
+        }
+
+        function getData(date) {
+            try {
+                const raw = localStorage.getItem(getStorageKey(date));
+                return raw ? { ...getDefaultData(), ...JSON.parse(raw) } : getDefaultData();
+            } catch (e) {
+                return getDefaultData();
+            }
+        }
+
+        function saveData(date, data) {
+            try {
+                localStorage.setItem(getStorageKey(date), JSON.stringify(data));
+                syncToURL();
+                updateStreak();
+                renderWeightHistory();
+            } catch (e) {
+                alert('儲存失敗');
+            }
+        }
+
+        function loadDayData(date) {
+            const data = getData(date);
+            document.getElementById('weightInput').value = data.weight || '';
+            updateWaterUI(data.waterCount || 0);
+            document.getElementById('medBefore').checked = !!data.medBefore;
+            document.getElementById('medAfter').checked = !!data.medAfter;
+            document.getElementById('teaBag').checked = !!data.teaBag;
+            document.getElementById('dailyExercise').checked = !!data.dailyExercise;
+            document.getElementById('sleepBefore12').checked = !!data.sleepBefore12;
+
+            const d = new Date(date + 'T00:00:00');
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
+            document.getElementById('dateDisplay').innerText = d.toLocaleDateString('zh-Hant', options);
+
+            calculateWeightDiff(date);
+        }
+
+        function saveWeight(val) {
+            const data = getData(currentDate);
+            data.weight = val;
+            saveData(currentDate, data);
+            calculateWeightDiff(currentDate);
+        }
+
+        function toggleWater(index) {
+            const data = getData(currentDate);
+            if (data.waterCount >= index) {
+                data.waterCount = index - 1;
+            } else {
+                data.waterCount = index;
+            }
+            saveData(currentDate, data);
+            updateWaterUI(data.waterCount);
+        }
+
+        function updateWaterUI(count) {
+            document.getElementById('waterText').innerText = `${count * 500} / 2000 cc`;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`water_${i}`);
+                if (i <= count) {
+                    btn.className = `flex flex-col items-center justify-center py-3 rounded-xl border border-blue-500 bg-blue-50 text-blue-600 font-bold transition shadow-sm`;
+                    btn.innerHTML = `<span class="text-xl mb-1">💧</span><span>已喝 500</span>`;
+                } else {
+                    btn.className = `flex flex-col items-center justify-center py-3 rounded-xl border border-slate-200 bg-slate-50 transition font-medium text-xs text-slate-400 hover:bg-slate-100`;
+                    btn.innerHTML = `<span class="text-xl mb-1">🥤</span><span>+500c</span>`;
+                }
+            }
+        }
+
+        function saveHabit(field, value) {
+            const data = getData(currentDate);
+            data[field] = value;
+            saveData(currentDate, data);
+        }
+
+        function changeDate(days) {
+            const d = new Date(currentDate + 'T00:00:00');
+            d.setDate(d.getDate() + days);
+            currentDate = getLocalDateString(d);
+            document.getElementById('datePicker').value = currentDate;
+            loadDayData(currentDate);
+        }
+
+        function onDateChange(val) {
+            if (val) {
+                currentDate = val;
+                loadDayData(currentDate);
+            }
+        }
+
+        function setToday() {
+            currentDate = getLocalDateString(new Date());
+            document.getElementById('datePicker').value = currentDate;
+            loadDayData(currentDate);
+        }
+
+        function calculateWeightDiff(dateStr) {
+            let d = new Date(dateStr + 'T00:00:00');
+            let currentWeight = parseFloat(getData(dateStr).weight);
+            let diffEl = document.getElementById('weightDiff');
+
+            if (isNaN(currentWeight)) {
+                diffEl.innerText = '與前次比較：--';
+                return;
+            }
+
+            for (let i = 1; i <= 30; i++) {
+                d.setDate(d.getDate() - 1);
+                let prevDateStr = getLocalDateString(d);
+                let prevData = getData(prevDateStr);
+                if (prevData && !isNaN(parseFloat(prevData.weight))) {
+                    let prevWeight = parseFloat(prevData.weight);
+                    let diff = (currentWeight - prevWeight).toFixed(1);
+                    if (diff > 0) {
+                        diffEl.innerText = `比前次 +${diff} kg`;
+                        diffEl.className = 'text-xs font-normal text-rose-500';
+                    } else if (diff < 0) {
+                        diffEl.innerText = `比前次 ${diff} kg`;
+                        diffEl.className = 'text-xs font-normal text-emerald-600';
+                    } else {
+                        diffEl.innerText = `與前次持平`;
+                        diffEl.className = 'text-xs font-normal text-slate-400';
+                    }
+                    return;
+                }
+            }
+            diffEl.innerText = '與前次比較：--';
+        }
+
+        function renderWeightHistory() {
+            const listEl = document.getElementById('weightHistoryList');
+            let records = [];
+
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.startsWith(STORAGE_PREFIX)) {
+                    let dateStr = key.replace(STORAGE_PREFIX, '');
+                    let data = JSON.parse(localStorage.getItem(key));
+                    if (data && data.weight && !isNaN(parseFloat(data.weight))) {
+                        records.push({ date: dateStr, weight: parseFloat(data.weight) });
+                    }
+                }
+            }
+
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (records.length === 0) {
+                listEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-3">尚無體重紀錄</div>`;
+                return;
+            }
+
+            listEl.innerHTML = records.map(r => `
+                <div class="flex justify-between items-center bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100 text-sm">
+                    <span class="text-slate-600 font-medium">${r.date}</span>
+                    <span class="font-bold text-slate-800">${r.weight} <span class="text-xs font-normal text-slate-400">kg</span></span>
+                </div>
+            `).join('');
+        }
+
+        function hasAnyRecord(data) {
+            return !!(
+                data.weight ||
+                data.waterCount > 0 ||
+                data.medBefore ||
+                data.medAfter ||
+                data.teaBag ||
+                data.dailyExercise ||
+                data.sleepBefore12
+            );
+        }
+
+        function updateStreak() {
+            let streak = 0;
+            let d = new Date();
+            for (let i = 0; i < 365; i++) {
+                let dateStr = getLocalDateString(d);
+                let data = getData(dateStr);
+                if (hasAnyRecord(data)) {
+                    streak++;
+                    d.setDate(d.getDate() - 1);
+                } else if (i === 0) {
+                    d.setDate(d.getDate() - 1);
+                    let yesterdayData = getData(getLocalDateString(d));
+                    if (!hasAnyRecord(yesterdayData)) {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('streakBadge').innerText = `連續打卡 ${streak} 天`;
+        }
+
+        function exportData() {
+            let exportObj = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.startsWith(STORAGE_PREFIX)) {
+                    exportObj[key] = localStorage.getItem(key);
+                }
+            }
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+            let dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `my_health_backup_${getLocalDateString(new Date())}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importData(event) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let imported = JSON.parse(e.target.result);
+                    for (let key in imported) {
+                        if (key.startsWith(STORAGE_PREFIX)) {
+                            localStorage.setItem(key, imported[key]);
+                        }
+                    }
+                    syncToURL();
+                    loadDayData(currentDate);
+                    renderWeightHistory();
+                    alert('還原成功！');
+                } catch (err) {
+                    alert('檔案格式錯誤！');
+                }
+            };
+            reader.readAsText(event.target.files[0]);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
