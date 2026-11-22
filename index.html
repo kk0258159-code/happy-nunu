@@ -60,54 +60,14 @@
             <div class="grid grid-cols-4 gap-2.5" id="waterCups"></div>
         </section>
 
-        <!-- 3. 用藥、茶包、運動與作息打卡 -->
-        <section class="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-slate-100 space-y-3">
-            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">3. 日常習慣與用藥</h2>
-            
-            <!-- 飯前/後中藥 -->
-            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
-                <div class="flex items-center gap-3">
-                    <span class="text-lg">🌿</span>
-                    <span class="font-medium text-slate-700">飯前/後中藥</span>
-                </div>
-                <input type="checkbox" id="medBefore" onchange="saveHabit('medBefore', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
-            </label>
+        <!-- 3. 日常習慣與用藥（獨立按鈕版） -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-slate-100">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider">3. 日常習慣與用藥</h2>
+                <span id="habitSummaryText" class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">已完成 0 / 7</span>
+            </div>
 
-            <!-- 壽美降脂1號 -->
-            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
-                <div class="flex items-center gap-3">
-                    <span class="text-lg">💊</span>
-                    <span class="font-medium text-slate-700">壽美降脂1號</span>
-                </div>
-                <input type="checkbox" id="medAfter" onchange="saveHabit('medAfter', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
-            </label>
-
-            <!-- 茶包 -->
-            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
-                <div class="flex items-center gap-3">
-                    <span class="text-lg">🍵</span>
-                    <span class="font-medium text-slate-700">茶包</span>
-                </div>
-                <input type="checkbox" id="teaBag" onchange="saveHabit('teaBag', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
-            </label>
-
-            <!-- 每日運動 -->
-            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
-                <div class="flex items-center gap-3">
-                    <span class="text-lg">🏃</span>
-                    <span class="font-medium text-slate-700">每日運動</span>
-                </div>
-                <input type="checkbox" id="dailyExercise" onchange="saveHabit('dailyExercise', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
-            </label>
-
-            <!-- 12點前睡覺 -->
-            <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/80 transition">
-                <div class="flex items-center gap-3">
-                    <span class="text-lg">🌙</span>
-                    <span class="font-medium text-slate-700">12點前睡覺</span>
-                </div>
-                <input type="checkbox" id="sleepBefore12" onchange="saveHabit('sleepBefore12', this.checked)" class="w-6 h-6 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
-            </label>
+            <div class="grid grid-cols-2 gap-2.5" id="habitButtonsGrid"></div>
         </section>
 
         <!-- 4. 歷史體重紀錄清單 -->
@@ -138,6 +98,16 @@
         const STORAGE_PREFIX = 'my_health_tracker_';
         let currentDate = getLocalDateString(new Date());
 
+        const HABIT_ITEMS = [
+            { key: 'breakfastMed', label: '早餐藥', icon: '💊', activeIcon: '✅', note: '' },
+            { key: 'lunchMed', label: '中餐藥', icon: '💊', activeIcon: '✅', note: '' },
+            { key: 'dinnerMed', label: '晚餐藥', icon: '💊', activeIcon: '✅', note: '' },
+            { key: 'teaBag', label: '茶包', icon: '🍵', activeIcon: '🍵', note: '' },
+            { key: 'bedtimeMed', label: '睡前藥', icon: '💊', activeIcon: '✅', note: '壽美降脂1號' },
+            { key: 'dailyExercise', label: '每日運動', icon: '🏃', activeIcon: '🏃', note: '' },
+            { key: 'sleepBefore12', label: '12點前睡覺', icon: '🌙', activeIcon: '🌙', note: '' }
+        ];
+
         function getLocalDateString(dateObj) {
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -149,9 +119,11 @@
             return {
                 weight: '',
                 waterCount: 0,
-                medBefore: false,
-                medAfter: false,
+                breakfastMed: false,
+                lunchMed: false,
+                dinnerMed: false,
                 teaBag: false,
+                bedtimeMed: false,
                 dailyExercise: false,
                 sleepBefore12: false
             };
@@ -195,6 +167,7 @@
             getAllData();
             document.getElementById('datePicker').value = currentDate;
             renderWaterCups();
+            renderHabitButtons();
             loadDayData(currentDate);
             updateStreak();
             renderWeightHistory();
@@ -211,6 +184,49 @@
                 btn.innerHTML = `<span class="text-xl mb-1">🥤</span><span>+500c</span>`;
                 container.appendChild(btn);
             }
+        }
+
+        function renderHabitButtons() {
+            const container = document.getElementById('habitButtonsGrid');
+            container.innerHTML = '';
+            HABIT_ITEMS.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = `habit_${item.key}`;
+                btn.onclick = () => toggleHabitButton(item.key);
+                container.appendChild(btn);
+            });
+        }
+
+        function updateHabitButtonsUI(data) {
+            let doneCount = 0;
+            HABIT_ITEMS.forEach(item => {
+                const isChecked = !!data[item.key];
+                if (isChecked) doneCount++;
+
+                const btn = document.getElementById(`habit_${item.key}`);
+                const noteHtml = item.note
+                    ? `<span class="text-[11px] text-slate-400 mt-0.5 leading-tight">${item.note}</span>`
+                    : '';
+
+                if (isChecked) {
+                    btn.className = `flex flex-col items-center justify-center py-3 px-2.5 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold transition shadow-sm min-h-[76px]`;
+                    btn.innerHTML = `
+                        <span class="text-xl mb-1">${item.activeIcon}</span>
+                        <span class="text-sm leading-tight">${item.label}</span>
+                        ${noteHtml}
+                    `;
+                } else {
+                    btn.className = `flex flex-col items-center justify-center py-3 px-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 font-medium transition min-h-[76px]`;
+                    btn.innerHTML = `
+                        <span class="text-xl mb-1">${item.icon}</span>
+                        <span class="text-sm leading-tight">${item.label}</span>
+                        ${noteHtml}
+                    `;
+                }
+            });
+
+            document.getElementById('habitSummaryText').innerText = `已完成 ${doneCount} / ${HABIT_ITEMS.length}`;
         }
 
         function getStorageKey(date) {
@@ -241,11 +257,7 @@
             const data = getData(date);
             document.getElementById('weightInput').value = data.weight || '';
             updateWaterUI(data.waterCount || 0);
-            document.getElementById('medBefore').checked = !!data.medBefore;
-            document.getElementById('medAfter').checked = !!data.medAfter;
-            document.getElementById('teaBag').checked = !!data.teaBag;
-            document.getElementById('dailyExercise').checked = !!data.dailyExercise;
-            document.getElementById('sleepBefore12').checked = !!data.sleepBefore12;
+            updateHabitButtonsUI(data);
 
             const d = new Date(date + 'T00:00:00');
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
@@ -286,10 +298,11 @@
             }
         }
 
-        function saveHabit(field, value) {
+        function toggleHabitButton(field) {
             const data = getData(currentDate);
-            data[field] = value;
+            data[field] = !data[field];
             saveData(currentDate, data);
+            updateHabitButtonsUI(data);
         }
 
         function changeDate(days) {
@@ -380,11 +393,7 @@
             return !!(
                 data.weight ||
                 data.waterCount > 0 ||
-                data.medBefore ||
-                data.medAfter ||
-                data.teaBag ||
-                data.dailyExercise ||
-                data.sleepBefore12
+                HABIT_ITEMS.some(item => !!data[item.key])
             );
         }
 
